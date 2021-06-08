@@ -10,8 +10,7 @@ create table intermedia
     customer_type text not null,
     revenue       double precision,
     cost          double precision,
-    constraint intermedia_pkey
-        primary key (month, week, product_type, sales_channel, customer_type)
+    constraint pk_intermedia primary key (product_type, sales_channel, customer_type,revenue,cost)
 );
 
 --b
@@ -23,7 +22,8 @@ create table definitiva
     sales_channel text not null,
     customer_type text not null,
     revenue       double precision,
-    cost          double precision
+    cost          double precision,
+    constraint pk_definitiva primary key (sales_date,product_type,sales_channel,customer_type,revenue,cost)
 );
 
 --c
@@ -69,6 +69,11 @@ end;
 
 $$ LANGUAGE plpgsql;
 
+CREATE TRIGGER newDate
+AFTER INSERT OR UPDATE ON intermedia
+FOR EACH ROW
+EXECUTE PROCEDURE newDate();
+
 --\COPY intermedia FROM 'SalesbyRegion.csv' CSV HEADER DELIMITER ',';
 
 --d
@@ -87,7 +92,7 @@ create or replace function MedianaMargenMovil(fecha date,n integer)
            from definitiva where sales_date between fecha2 and fecha )::numeric(10,2);
     end;
 $$LANGUAGE plpgsql;
-select medianamargenmovil(to_date('2011-09-01','YYYY-MM-DD'),5);
+select medianamargenmovil(to_date('2012-11-01','YYYY-MM-DD'),0);
 
 --e
 CREATE OR REPLACE FUNCTION ReporteVentas(n int)
@@ -178,6 +183,7 @@ CREATE OR REPLACE FUNCTION ReporteVentas(n int)
             END LOOP;
             raise notice '-------------------------------------------%    %   %', CAST(total_revenue AS INT), CAST(total_cost AS INT), CAST(total_margin AS INT);
             CLOSE sales_channel_cursor;
+            raise notice '--------------------------------------------------------------------------';
             year = year+1;
             aux = 0;
         END LOOP;
